@@ -3,11 +3,18 @@ import { ProjectsAPI } from "./api";
 import ProjectCreate from "./ProjectCreate";
 import { adaptProject } from "./adapters";
 import "./App.css";
+import { adaptEntry } from "./adapters";
+import { EntriesAPI } from "./api";
+import EntryCreate from "./EntryCreate";
+
+
 
 function App() {
     const [projects, setProjects] = useState(null);
     const [error, setError] = useState("");
     const [selected, setSelected] = useState(null); // 👈 missing before
+    const [entries, setEntries] = useState([]);
+
 
     useEffect(() => {
         (async () => {
@@ -30,18 +37,39 @@ function App() {
             const created = await ProjectsAPI.create(payload);
             const item = adaptProject(created);
 
-            // If backend didn’t echo back the name clearly, fall back to what you typed
+            // keep your existing name fallback
             if (!item.name || item.name.startsWith("(untitled")) {
                 if (payload?.name && payload.name.trim().length > 0) {
                     item.name = payload.name.trim();
                 }
             }
 
-            setProjects(prev => (prev ? [item, ...prev] : [item]));
+            // 👇 NEW: if backend didn't echo clientName, infer it from the dropdown
+            if (!item.clientName && payload?.clientId) {
+                const select = document.querySelector("select"); // our client select
+                const opt = Array.from(select?.options || []).find(
+                    (o) => Number(o.value) === Number(payload.clientId)
+                );
+                if (opt) item.clientName = opt.textContent || null;
+            }
+
+            setProjects((prev) => (prev ? [item, ...prev] : [item]));
         } catch (e) {
             setError(e.message);
         }
     }
+
+    async function handleSelect(project) {
+        setSelected(project);
+        try {
+            const list = await EntriesAPI.listByProject(project.id);
+            setEntries(Array.isArray(list) ? list.map(adaptEntry) : []);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+
 
 
     return (
@@ -66,7 +94,7 @@ function App() {
                         <li
                             key={p.id}
                             className="card"
-                            onClick={() => setSelected(p)}
+                            onClick={() => handleSelect(p)}
                             style={{ cursor: "pointer" }}
                         >
                             {/* TITLE = project name */}
@@ -87,10 +115,57 @@ function App() {
                     <div className="muted small">
                         #{selected.id} — {selected.name}
                     </div>
+
+                    {/* ---- Add Entry form (date/hours/notes/billable) ---- */}
+                    <EntryCreate
+                        projectId={selected.id}
+                        onCreate={async (payload) => {
+                            // create entry, adapt, and prepend to list
+                            const created = await EntriesAPI.create(payload);
+                            const item = adaptEntry(created);
+                            setEntries((prev) => [item, ...(prev || [])]);
+                        }}
+                    />
+
+                    {/* ---- Totals + Entries list ---- */}
+                    {entries?.length > 0 ? (
+                        <>
+                            <div className="muted small" style={{ marginTop: 8 }}>
+                                Total: {entries.reduce((sum, e) => sum + (e.hours || 0), 0).toFixed(2)} h
+                            </div>
+
+                            <ul className="list" style={{ marginTop: 8 }}>
+                                {entries.map((en) => (
+                                    <li
+                                        key={en.id}
+                                        className="card"
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "120px 80px 1fr 90px",
+                                            gap: 8,
+                                            alignItems: "center",
+                                        }}
+                                    >
+                                        <div className="muted small">{en.date || "—"}</div>
+                                        <div className="card-title" style={{ margin: 0 }}>
+                                            {typeof en.hours === "number" ? en.hours.toFixed(2) : en.hours}h
+                                        </div>
+                                        <div className="muted">{en.notes || "(no notes)"}</div>
+                                        <div className="muted small">{en.billable ? "Billable" : "Non-billable"}</div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    ) : (
+                        <div className="muted small" style={{ marginTop: 8 }}>
+                            No entries yet.
+                        </div>
+                    )}
                 </div>
             )}
         </div>
     );
+
 }
 
 export default App;

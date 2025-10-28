@@ -22,13 +22,39 @@ async function request(path, options = {}) {
     // Fallbacks (some servers return 201 with empty or text body)
     const text = await res.text();
     try { return JSON.parse(text); } catch { return text || undefined; }
-}
+    }
 
-export const ProjectsAPI = {
+    export const ProjectsAPI = {
     list: () => request("/api/projects"),
     create: (payload) =>
         request("/api/projects", {
             method: "POST",
             body: JSON.stringify(payload),
         }),
+        };
+
+    export const ClientsAPI = {
+    list: () => request("/api/clients"),
+    };
+
+    export const EntriesAPI = {
+    // list entries for a project
+    listByProject: (projectId) => request(`/api/projects/${projectId}/time-entries`),
+
+    // list entries in a date range (optional future use)
+    listByDateRange: (startIsoDate, endIsoDate) =>
+        request(`/api/time-entries?start=${startIsoDate}&end=${endIsoDate}`),
+
+    // create a manual entry
+    create: (payload) =>
+        request("/api/time-entries", {
+            method: "POST",
+            body: JSON.stringify(payload), // { projectId, date, hours, notes, billable }
+        }),
+
+    // delete an entry
+    delete: (entryId) =>
+        request(`/api/time-entries/${entryId}`, { method: "DELETE" }),
 };
+
+
