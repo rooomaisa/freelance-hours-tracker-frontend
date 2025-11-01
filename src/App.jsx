@@ -6,6 +6,10 @@ import "./App.css";
 import { adaptEntry } from "./adapters";
 import { EntriesAPI } from "./api";
 import EntryCreate from "./EntryCreate";
+import { isInThisWeek, isInThisMonth } from "./utils/dateFilters";
+import { ClientsAPI } from "./api";
+
+
 
 
 
@@ -29,6 +33,19 @@ function App() {
                 setProjects(adapted);
             } catch (e) {
                 setError(e.message);
+            }
+        })();
+    }, []);
+    const [clients, setClients] = useState([]);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const list = await ClientsAPI.list();
+                setClients(Array.isArray(list) ? list : []);
+            } catch (e) {
+                console.error(e);
+                setClients([]);
             }
         })();
     }, []);
@@ -81,42 +98,6 @@ function App() {
         }
     }
 
-    function toDateOnly(d) {
-        // expects 'YYYY-MM-DD' (your backend's LocalDate)
-        if (!d) return null;
-        // Construct as UTC to avoid TZ shifting the day
-        const [y, m, day] = d.split("-").map(Number);
-        return new Date(Date.UTC(y, m - 1, day));
-    }
-
-    function startOfThisWeek() {
-        const now = new Date();
-        const day = (now.getDay() + 6) % 7; // Mon=0 ... Sun=6
-        const monday = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() - day));
-        monday.setUTCHours(0, 0, 0, 0);
-        return monday;
-    }
-
-    function endOfThisWeek() {
-        const s = startOfThisWeek();
-        const sunday = new Date(s);
-        sunday.setUTCDate(s.getUTCDate() + 6);
-        sunday.setUTCHours(23, 59, 59, 999);
-        return sunday;
-    }
-
-    function isInThisWeek(isoDate) {
-        const d = toDateOnly(isoDate);
-        if (!d) return false;
-        return d >= startOfThisWeek() && d <= endOfThisWeek();
-    }
-
-    function isInThisMonth(isoDate) {
-        const d = toDateOnly(isoDate);
-        if (!d) return false;
-        const now = new Date();
-        return d.getUTCFullYear() === now.getFullYear() && d.getUTCMonth() === now.getMonth();
-    }
 
     const filteredEntries = (entries || []).filter(en => {
         if (filter === "all") return true;
@@ -136,7 +117,10 @@ function App() {
                 Fetching from: <code>{import.meta.env.VITE_API_URL}</code>
             </p>
 
-            <ProjectCreate onCreate={handleCreate} />
+            <ProjectCreate
+                onCreate={handleCreate}
+                clients={clients}
+                onClientsChange={setClients}/>
 
             {error && <p style={{ color: "crimson" }}>Error: {error}</p>}
             {!projects && !error && <p>Loading projects…</p>}

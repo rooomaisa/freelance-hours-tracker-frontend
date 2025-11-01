@@ -33,9 +33,9 @@ async function request(path, options = {}) {
         }),
         };
 
-    export const ClientsAPI = {
-    list: () => request("/api/clients"),
-    };
+    // export const ClientsAPI = {
+    // list: () => request("/api/clients"),
+    // };
 
     export const EntriesAPI = {
     // list entries for a project
@@ -55,6 +55,16 @@ async function request(path, options = {}) {
     // delete an entry
     delete: (entryId) =>
         request(`/api/time-entries/${entryId}`, { method: "DELETE" }),
-};
+    };
+
+    export const ClientsAPI = {
+    list: () => request("/api/clients"),
+    create: (payload) =>
+        request("/api/clients", {
+            method: "POST",
+            body: JSON.stringify(payload), // { name, email? }
+        }),
+    };
+
 
 
