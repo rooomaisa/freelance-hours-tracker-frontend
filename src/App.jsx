@@ -69,6 +69,17 @@ function App() {
         }
     }
 
+    async function handleDeleteEntry(entryId) {
+        try {
+            await EntriesAPI.delete(entryId);
+            setEntries(prev => prev.filter(e => e.id !== entryId));
+        } catch (e) {
+            console.error(e);
+            setError(String(e.message || e));
+        }
+    }
+
+
 
 
 
@@ -141,7 +152,7 @@ function App() {
                                         className="card"
                                         style={{
                                             display: "grid",
-                                            gridTemplateColumns: "120px 80px 1fr 90px",
+                                            gridTemplateColumns: "120px 80px 1fr 90px 36px", // +1 col for delete
                                             gap: 8,
                                             alignItems: "center",
                                         }}
@@ -152,7 +163,40 @@ function App() {
                                         </div>
                                         <div className="muted">{en.notes || "(no notes)"}</div>
                                         <div className="muted small">{en.billable ? "Billable" : "Non-billable"}</div>
+
+                                        <button
+                                            onClick={() => handleDeleteEntry(en.id)}
+                                            title="Delete entry"
+                                            style={{
+                                                border: "1px solid #ddd",
+                                                borderRadius: 8,
+                                                background: "#fff",
+                                                cursor: "pointer",
+                                                padding: 6,
+                                                lineHeight: 1,
+                                            }}
+                                        >
+                                            🗑️
+                                        </button>
                                     </li>
+
+                                    // <li
+                                    //     key={en.id}
+                                    //     className="card"
+                                    //     style={{
+                                    //         display: "grid",
+                                    //         gridTemplateColumns: "120px 80px 1fr 90px",
+                                    //         gap: 8,
+                                    //         alignItems: "center",
+                                    //     }}
+                                    // >
+                                    //     <div className="muted small">{en.date || "—"}</div>
+                                    //     <div className="card-title" style={{ margin: 0 }}>
+                                    //         {typeof en.hours === "number" ? en.hours.toFixed(2) : en.hours}h
+                                    //     </div>
+                                    //     <div className="muted">{en.notes || "(no notes)"}</div>
+                                    //     <div className="muted small">{en.billable ? "Billable" : "Non-billable"}</div>
+                                    // </li>
                                 ))}
                             </ul>
                         </>
