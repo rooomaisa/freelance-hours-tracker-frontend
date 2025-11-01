@@ -12,8 +12,10 @@ import EntryCreate from "./EntryCreate";
 function App() {
     const [projects, setProjects] = useState(null);
     const [error, setError] = useState("");
-    const [selected, setSelected] = useState(null); // 👈 missing before
+    const [selected, setSelected] = useState(null);
     const [entries, setEntries] = useState([]);
+    const [filter, setFilter] = useState("all");
+
 
 
     useEffect(() => {
@@ -79,7 +81,51 @@ function App() {
         }
     }
 
+    function toDateOnly(d) {
+        // expects 'YYYY-MM-DD' (your backend's LocalDate)
+        if (!d) return null;
+        // Construct as UTC to avoid TZ shifting the day
+        const [y, m, day] = d.split("-").map(Number);
+        return new Date(Date.UTC(y, m - 1, day));
+    }
 
+    function startOfThisWeek() {
+        const now = new Date();
+        const day = (now.getDay() + 6) % 7; // Mon=0 ... Sun=6
+        const monday = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() - day));
+        monday.setUTCHours(0, 0, 0, 0);
+        return monday;
+    }
+
+    function endOfThisWeek() {
+        const s = startOfThisWeek();
+        const sunday = new Date(s);
+        sunday.setUTCDate(s.getUTCDate() + 6);
+        sunday.setUTCHours(23, 59, 59, 999);
+        return sunday;
+    }
+
+    function isInThisWeek(isoDate) {
+        const d = toDateOnly(isoDate);
+        if (!d) return false;
+        return d >= startOfThisWeek() && d <= endOfThisWeek();
+    }
+
+    function isInThisMonth(isoDate) {
+        const d = toDateOnly(isoDate);
+        if (!d) return false;
+        const now = new Date();
+        return d.getUTCFullYear() === now.getFullYear() && d.getUTCMonth() === now.getMonth();
+    }
+
+    const filteredEntries = (entries || []).filter(en => {
+        if (filter === "all") return true;
+        if (filter === "week") return isInThisWeek(en.date);
+        if (filter === "month") return isInThisMonth(en.date);
+        return true;
+    });
+
+    const filteredTotal = filteredEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
 
 
 
@@ -131,28 +177,75 @@ function App() {
                     <EntryCreate
                         projectId={selected.id}
                         onCreate={async (payload) => {
-                            // create entry, adapt, and prepend to list
                             const created = await EntriesAPI.create(payload);
                             const item = adaptEntry(created);
                             setEntries((prev) => [item, ...(prev || [])]);
                         }}
                     />
 
-                    {/* ---- Totals + Entries list ---- */}
-                    {entries?.length > 0 ? (
+                    {/* ---- Filter controls ---- */}
+                    <div
+                        className="muted small"
+                        style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}
+                    >
+                        <span>Show:</span>
+                        <button
+                            onClick={() => setFilter("all")}
+                            style={{
+                                padding: "6px 10px",
+                                borderRadius: 8,
+                                border: filter === "all" ? "1px solid #000" : "1px solid #ddd",
+                                background: filter === "all" ? "#000" : "#fff",
+                                color: filter === "all" ? "#fff" : "#000",
+                                cursor: "pointer",
+                            }}
+                        >
+                            All
+                        </button>
+                        <button
+                            onClick={() => setFilter("week")}
+                            style={{
+                                padding: "6px 10px",
+                                borderRadius: 8,
+                                border: filter === "week" ? "1px solid #000" : "1px solid #ddd",
+                                background: filter === "week" ? "#000" : "#fff",
+                                color: filter === "week" ? "#fff" : "#000",
+                                cursor: "pointer",
+                            }}
+                        >
+                            This week
+                        </button>
+                        <button
+                            onClick={() => setFilter("month")}
+                            style={{
+                                padding: "6px 10px",
+                                borderRadius: 8,
+                                border: filter === "month" ? "1px solid #000" : "1px solid #ddd",
+                                background: filter === "month" ? "#000" : "#fff",
+                                color: filter === "month" ? "#fff" : "#000",
+                                cursor: "pointer",
+                            }}
+                        >
+                            This month
+                        </button>
+                    </div>
+
+                    {/* ---- Totals + Entries list (filtered) ---- */}
+                    {filteredEntries.length > 0 ? (
                         <>
                             <div className="muted small" style={{ marginTop: 8 }}>
-                                Total: {entries.reduce((sum, e) => sum + (e.hours || 0), 0).toFixed(2)} h
+                                Total: {filteredTotal.toFixed(2)} h
+                                {filter !== "all" && <span> (filtered)</span>}
                             </div>
 
                             <ul className="list" style={{ marginTop: 8 }}>
-                                {entries.map((en) => (
+                                {filteredEntries.map((en) => (
                                     <li
                                         key={en.id}
                                         className="card"
                                         style={{
                                             display: "grid",
-                                            gridTemplateColumns: "120px 80px 1fr 90px 36px", // +1 col for delete
+                                            gridTemplateColumns: "120px 80px 1fr 90px 36px",
                                             gap: 8,
                                             alignItems: "center",
                                         }}
@@ -162,7 +255,9 @@ function App() {
                                             {typeof en.hours === "number" ? en.hours.toFixed(2) : en.hours}h
                                         </div>
                                         <div className="muted">{en.notes || "(no notes)"}</div>
-                                        <div className="muted small">{en.billable ? "Billable" : "Non-billable"}</div>
+                                        <div className="muted small">
+                                            {en.billable ? "Billable" : "Non-billable"}
+                                        </div>
 
                                         <button
                                             onClick={() => handleDeleteEntry(en.id)}
@@ -179,36 +274,19 @@ function App() {
                                             🗑️
                                         </button>
                                     </li>
-
-                                    // <li
-                                    //     key={en.id}
-                                    //     className="card"
-                                    //     style={{
-                                    //         display: "grid",
-                                    //         gridTemplateColumns: "120px 80px 1fr 90px",
-                                    //         gap: 8,
-                                    //         alignItems: "center",
-                                    //     }}
-                                    // >
-                                    //     <div className="muted small">{en.date || "—"}</div>
-                                    //     <div className="card-title" style={{ margin: 0 }}>
-                                    //         {typeof en.hours === "number" ? en.hours.toFixed(2) : en.hours}h
-                                    //     </div>
-                                    //     <div className="muted">{en.notes || "(no notes)"}</div>
-                                    //     <div className="muted small">{en.billable ? "Billable" : "Non-billable"}</div>
-                                    // </li>
                                 ))}
                             </ul>
                         </>
                     ) : (
                         <div className="muted small" style={{ marginTop: 8 }}>
-                            No entries yet.
+                            {filter === "all" ? "No entries yet." : "No entries in this range."}
                         </div>
                     )}
                 </div>
             )}
         </div>
     );
+
 
 }
 
