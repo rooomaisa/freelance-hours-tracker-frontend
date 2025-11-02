@@ -1,43 +1,32 @@
-
 import { useEffect, useState } from "react";
-import { ProjectsAPI } from "./api";
+import { ProjectsAPI, EntriesAPI, ClientsAPI } from "./api";
 import ProjectCreate from "./ProjectCreate";
-import { adaptProject } from "./adapters";
-// import "./App.css";
-import { adaptEntry } from "./adapters";
-import { EntriesAPI } from "./api";
 import EntryCreate from "./EntryCreate";
+import { adaptProject, adaptEntry } from "./adapters";
 import { isInThisWeek, isInThisMonth } from "./utils/dateFilters";
-import { ClientsAPI } from "./api";
 
+// NOTE: no App.css import — Tailwind is handling styles via index.css
 
-
-
-
-function App() {
+export default function App() {
     const [projects, setProjects] = useState(null);
     const [error, setError] = useState("");
     const [selected, setSelected] = useState(null);
     const [entries, setEntries] = useState([]);
     const [filter, setFilter] = useState("all");
-
-
+    const [clients, setClients] = useState([]);
 
     useEffect(() => {
         (async () => {
             try {
                 const data = await ProjectsAPI.list();
                 const items = Array.isArray(data) ? data : (data?.content ?? []);
-                console.log("RAW projects:", items);
                 const adapted = items.map(adaptProject);
-                console.log("ADAPTED projects:", adapted);
                 setProjects(adapted);
             } catch (e) {
                 setError(e.message);
             }
         })();
     }, []);
-    const [clients, setClients] = useState([]);
 
     useEffect(() => {
         (async () => {
@@ -51,22 +40,21 @@ function App() {
         })();
     }, []);
 
-
     async function handleCreate(payload) {
         try {
             const created = await ProjectsAPI.create(payload);
             const item = adaptProject(created);
 
-            // keep your existing name fallback
+            // keep existing name fallback
             if (!item.name || item.name.startsWith("(untitled")) {
                 if (payload?.name && payload.name.trim().length > 0) {
                     item.name = payload.name.trim();
                 }
             }
 
-            // 👇 NEW: if backend didn't echo clientName, infer it from the dropdown
+            // if backend didn’t echo clientName, infer it from the dropdown
             if (!item.clientName && payload?.clientId) {
-                const select = document.querySelector("select"); // our client select
+                const select = document.querySelector("select");
                 const opt = Array.from(select?.options || []).find(
                     (o) => Number(o.value) === Number(payload.clientId)
                 );
@@ -92,15 +80,14 @@ function App() {
     async function handleDeleteEntry(entryId) {
         try {
             await EntriesAPI.delete(entryId);
-            setEntries(prev => prev.filter(e => e.id !== entryId));
+            setEntries((prev) => prev.filter((e) => e.id !== entryId));
         } catch (e) {
             console.error(e);
             setError(String(e.message || e));
         }
     }
 
-
-    const filteredEntries = (entries || []).filter(en => {
+    const filteredEntries = (entries || []).filter((en) => {
         if (filter === "all") return true;
         if (filter === "week") return isInThisWeek(en.date);
         if (filter === "month") return isInThisMonth(en.date);
@@ -109,8 +96,6 @@ function App() {
 
     const filteredTotal = filteredEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
 
-
-
     return (
         <div className="max-w-5xl mx-auto px-4 py-6">
             <h1 className="text-2xl font-semibold tracking-tight">HoursTracker (Frontend)</h1>
@@ -118,21 +103,11 @@ function App() {
                 Fetching from: <code className="font-mono">{import.meta.env.VITE_API_URL}</code>
             </p>
 
-            <ProjectCreate
-                onCreate={handleCreate}
-                clients={clients}
-                onClientsChange={setClients}
-            />
+            <ProjectCreate onCreate={handleCreate} clients={clients} onClientsChange={setClients} />
 
             {/* status messages */}
-            {error && (
-                <p className="mt-3 text-sm text-red-600">
-                    Error: {error}
-                </p>
-            )}
-            {!projects && !error && (
-                <p className="mt-3 text-sm text-slate-600">Loading projects…</p>
-            )}
+            {error && <p className="mt-3 text-sm text-red-600">Error: {error}</p>}
+            {!projects && !error && <p className="mt-3 text-sm text-slate-600">Loading projects…</p>}
             {Array.isArray(projects) && projects.length === 0 && (
                 <p className="mt-3 text-sm text-slate-600">No projects yet.</p>
             )}
@@ -144,7 +119,7 @@ function App() {
                         <li
                             key={p.id}
                             onClick={() => handleSelect(p)}
-                            className="rounded-xl border border-slate-200 p-4 hover:bg-slate-50 cursor-pointer"
+                            className="rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md p-4 hover:bg-slate-50 cursor-pointer transition"
                         >
                             <div className="text-base font-medium text-slate-900">{p.name}</div>
                             <div className="text-sm text-slate-600 mt-1">
@@ -226,9 +201,7 @@ function App() {
                                         <div className="text-base font-semibold m-0">
                                             {typeof en.hours === "number" ? en.hours.toFixed(2) : en.hours}h
                                         </div>
-                                        <div className="text-sm text-slate-700">
-                                            {en.notes || "(no notes)"}
-                                        </div>
+                                        <div className="text-sm text-slate-700">{en.notes || "(no notes)"}</div>
                                         <div className="text-xs text-slate-600">
                                             {en.billable ? "Billable" : "Non-billable"}
                                         </div>
@@ -252,9 +225,4 @@ function App() {
             )}
         </div>
     );
-
-
-
 }
-
-export default App;
