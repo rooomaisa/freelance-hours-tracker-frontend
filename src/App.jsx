@@ -1,8 +1,9 @@
+
 import { useEffect, useState } from "react";
 import { ProjectsAPI } from "./api";
 import ProjectCreate from "./ProjectCreate";
 import { adaptProject } from "./adapters";
-import "./App.css";
+// import "./App.css";
 import { adaptEntry } from "./adapters";
 import { EntriesAPI } from "./api";
 import EntryCreate from "./EntryCreate";
@@ -111,38 +112,42 @@ function App() {
 
 
     return (
-        <div className="container">
-            <h1 className="title">HourTracker (Frontend)</h1>
-            <p className="muted small">
-                Fetching from: <code>{import.meta.env.VITE_API_URL}</code>
+        <div className="max-w-5xl mx-auto px-4 py-6">
+            <h1 className="text-2xl font-semibold tracking-tight">HoursTracker (Frontend)</h1>
+            <p className="text-sm text-slate-600 mt-1">
+                Fetching from: <code className="font-mono">{import.meta.env.VITE_API_URL}</code>
             </p>
 
             <ProjectCreate
                 onCreate={handleCreate}
                 clients={clients}
-                onClientsChange={setClients}/>
+                onClientsChange={setClients}
+            />
 
-            {error && <p style={{ color: "crimson" }}>Error: {error}</p>}
-            {!projects && !error && <p>Loading projects…</p>}
-
+            {/* status messages */}
+            {error && (
+                <p className="mt-3 text-sm text-red-600">
+                    Error: {error}
+                </p>
+            )}
+            {!projects && !error && (
+                <p className="mt-3 text-sm text-slate-600">Loading projects…</p>
+            )}
             {Array.isArray(projects) && projects.length === 0 && (
-                <p className="muted">No projects yet.</p>
+                <p className="mt-3 text-sm text-slate-600">No projects yet.</p>
             )}
 
+            {/* projects list */}
             {Array.isArray(projects) && projects.length > 0 && (
-                <ul className="list">
+                <ul className="mt-4 grid gap-3">
                     {projects.map((p) => (
                         <li
                             key={p.id}
-                            className="card"
                             onClick={() => handleSelect(p)}
-                            style={{ cursor: "pointer" }}
+                            className="rounded-xl border border-slate-200 p-4 hover:bg-slate-50 cursor-pointer"
                         >
-                            {/* TITLE = project name */}
-                            <div className="card-title">{p.name}</div>
-
-                            {/* META = client + active */}
-                            <div className="muted small">
+                            <div className="text-base font-medium text-slate-900">{p.name}</div>
+                            <div className="text-sm text-slate-600 mt-1">
                                 Client: {p.clientName ?? "—"} · Active: {String(p.active)}
                             </div>
                         </li>
@@ -150,14 +155,15 @@ function App() {
                 </ul>
             )}
 
+            {/* selected project */}
             {selected && (
-                <div className="card" style={{ marginTop: 12 }}>
-                    <div className="card-title">Selected project</div>
-                    <div className="muted small">
+                <div className="mt-4 rounded-xl border border-slate-200 p-4">
+                    <div className="text-base font-semibold">Selected project</div>
+                    <div className="text-sm text-slate-600">
                         #{selected.id} — {selected.name}
                     </div>
 
-                    {/* ---- Add Entry form (date/hours/notes/billable) ---- */}
+                    {/* ---- Add Entry form ---- */}
                     <EntryCreate
                         projectId={selected.id}
                         onCreate={async (payload) => {
@@ -168,47 +174,35 @@ function App() {
                     />
 
                     {/* ---- Filter controls ---- */}
-                    <div
-                        className="muted small"
-                        style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}
-                    >
+                    <div className="mt-3 text-sm text-slate-700 flex items-center gap-2">
                         <span>Show:</span>
                         <button
                             onClick={() => setFilter("all")}
-                            style={{
-                                padding: "6px 10px",
-                                borderRadius: 8,
-                                border: filter === "all" ? "1px solid #000" : "1px solid #ddd",
-                                background: filter === "all" ? "#000" : "#fff",
-                                color: filter === "all" ? "#fff" : "#000",
-                                cursor: "pointer",
-                            }}
+                            className={`h-8 rounded-lg px-3 border transition ${
+                                filter === "all"
+                                    ? "bg-black text-white border-black"
+                                    : "bg-white text-black border-slate-300 hover:bg-slate-50"
+                            }`}
                         >
                             All
                         </button>
                         <button
                             onClick={() => setFilter("week")}
-                            style={{
-                                padding: "6px 10px",
-                                borderRadius: 8,
-                                border: filter === "week" ? "1px solid #000" : "1px solid #ddd",
-                                background: filter === "week" ? "#000" : "#fff",
-                                color: filter === "week" ? "#fff" : "#000",
-                                cursor: "pointer",
-                            }}
+                            className={`h-8 rounded-lg px-3 border transition ${
+                                filter === "week"
+                                    ? "bg-black text-white border-black"
+                                    : "bg-white text-black border-slate-300 hover:bg-slate-50"
+                            }`}
                         >
                             This week
                         </button>
                         <button
                             onClick={() => setFilter("month")}
-                            style={{
-                                padding: "6px 10px",
-                                borderRadius: 8,
-                                border: filter === "month" ? "1px solid #000" : "1px solid #ddd",
-                                background: filter === "month" ? "#000" : "#fff",
-                                color: filter === "month" ? "#fff" : "#000",
-                                cursor: "pointer",
-                            }}
+                            className={`h-8 rounded-lg px-3 border transition ${
+                                filter === "month"
+                                    ? "bg-black text-white border-black"
+                                    : "bg-white text-black border-slate-300 hover:bg-slate-50"
+                            }`}
                         >
                             This month
                         </button>
@@ -217,43 +211,31 @@ function App() {
                     {/* ---- Totals + Entries list (filtered) ---- */}
                     {filteredEntries.length > 0 ? (
                         <>
-                            <div className="muted small" style={{ marginTop: 8 }}>
+                            <div className="mt-2 text-sm text-slate-700">
                                 Total: {filteredTotal.toFixed(2)} h
                                 {filter !== "all" && <span> (filtered)</span>}
                             </div>
 
-                            <ul className="list" style={{ marginTop: 8 }}>
+                            <ul className="mt-2 grid gap-2">
                                 {filteredEntries.map((en) => (
                                     <li
                                         key={en.id}
-                                        className="card"
-                                        style={{
-                                            display: "grid",
-                                            gridTemplateColumns: "120px 80px 1fr 90px 36px",
-                                            gap: 8,
-                                            alignItems: "center",
-                                        }}
+                                        className="rounded-lg border border-slate-200 p-3 grid grid-cols-[120px_80px_1fr_100px_40px] items-center gap-2"
                                     >
-                                        <div className="muted small">{en.date || "—"}</div>
-                                        <div className="card-title" style={{ margin: 0 }}>
+                                        <div className="text-sm text-slate-600">{en.date || "—"}</div>
+                                        <div className="text-base font-semibold m-0">
                                             {typeof en.hours === "number" ? en.hours.toFixed(2) : en.hours}h
                                         </div>
-                                        <div className="muted">{en.notes || "(no notes)"}</div>
-                                        <div className="muted small">
+                                        <div className="text-sm text-slate-700">
+                                            {en.notes || "(no notes)"}
+                                        </div>
+                                        <div className="text-xs text-slate-600">
                                             {en.billable ? "Billable" : "Non-billable"}
                                         </div>
-
                                         <button
                                             onClick={() => handleDeleteEntry(en.id)}
                                             title="Delete entry"
-                                            style={{
-                                                border: "1px solid #ddd",
-                                                borderRadius: 8,
-                                                background: "#fff",
-                                                cursor: "pointer",
-                                                padding: 6,
-                                                lineHeight: 1,
-                                            }}
+                                            className="border border-slate-300 rounded-lg bg-white hover:bg-slate-50 p-1 leading-none"
                                         >
                                             🗑️
                                         </button>
@@ -262,7 +244,7 @@ function App() {
                             </ul>
                         </>
                     ) : (
-                        <div className="muted small" style={{ marginTop: 8 }}>
+                        <div className="mt-2 text-sm text-slate-600">
                             {filter === "all" ? "No entries yet." : "No entries in this range."}
                         </div>
                     )}
@@ -270,6 +252,7 @@ function App() {
             )}
         </div>
     );
+
 
 
 }
