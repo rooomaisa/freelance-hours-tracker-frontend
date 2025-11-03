@@ -4,6 +4,8 @@ import ProjectCreate from "./ProjectCreate";
 import EntryCreate from "./EntryCreate";
 import { adaptProject, adaptEntry } from "./adapters";
 import { isInThisWeek, isInThisMonth } from "./utils/dateFilters";
+import AppShell from "./components/AppShell";
+
 
 // NOTE: no App.css import — Tailwind is handling styles via index.css
 
@@ -97,6 +99,7 @@ export default function App() {
     const filteredTotal = filteredEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
 
     return (
+        <AppShell>
         <div className="max-w-5xl mx-auto px-4 py-6">
             <h1 className="text-2xl font-semibold tracking-tight">HoursTracker (Frontend)</h1>
             <p className="text-sm text-slate-600 mt-1">
@@ -119,16 +122,31 @@ export default function App() {
                         <li
                             key={p.id}
                             onClick={() => handleSelect(p)}
-                            className="rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md p-4 hover:bg-slate-50 cursor-pointer transition"
+                            className="card p-4 hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer"
                         >
-                            <div className="text-base font-medium text-slate-900">{p.name}</div>
-                            <div className="text-sm text-slate-600 mt-1">
-                                Client: {p.clientName ?? "—"} · Active: {String(p.active)}
+                            <div className="flex items-start gap-3">
+                                {/* cute avatar-ish square */}
+                                <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 font-semibold">
+                                    {String(p.name || '?').slice(0,1).toUpperCase()}
+                                </div>
+
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-base font-medium">{p.name}</div>
+                                        <span className={p.active ? "badge-green" : "badge-amber"}>
+                                                         {p.active ? "Active" : "Paused"}
+                                         </span>
+                                    </div>
+                                    <div className="text-sm text-slate-600 mt-1">
+                                        Client: {p.clientName ?? "—"}
+                                    </div>
+                                </div>
                             </div>
                         </li>
                     ))}
                 </ul>
             )}
+
 
             {/* selected project */}
             {selected && (
@@ -150,38 +168,29 @@ export default function App() {
 
                     {/* ---- Filter controls ---- */}
                     <div className="mt-3 text-sm text-slate-700 flex items-center gap-2">
-                        <span>Show:</span>
-                        <button
-                            onClick={() => setFilter("all")}
-                            className={`h-8 rounded-lg px-3 border transition ${
-                                filter === "all"
-                                    ? "bg-black text-white border-black"
-                                    : "bg-white text-black border-slate-300 hover:bg-slate-50"
-                            }`}
-                        >
-                            All
-                        </button>
-                        <button
-                            onClick={() => setFilter("week")}
-                            className={`h-8 rounded-lg px-3 border transition ${
-                                filter === "week"
-                                    ? "bg-black text-white border-black"
-                                    : "bg-white text-black border-slate-300 hover:bg-slate-50"
-                            }`}
-                        >
-                            This week
-                        </button>
-                        <button
-                            onClick={() => setFilter("month")}
-                            className={`h-8 rounded-lg px-3 border transition ${
-                                filter === "month"
-                                    ? "bg-black text-white border-black"
-                                    : "bg-white text-black border-slate-300 hover:bg-slate-50"
-                            }`}
-                        >
-                            This month
-                        </button>
+                        <span className="text-slate-600">Show:</span>
+                        <div className="inline-flex rounded-xl border border-slate-300 bg-white p-1">
+                            <button
+                                onClick={() => setFilter("all")}
+                                className={`px-3 h-8 rounded-lg transition ${filter === "all" ? "bg-black text-white" : "text-slate-700 hover:bg-slate-100"}`}
+                            >
+                                All
+                            </button>
+                            <button
+                                onClick={() => setFilter("week")}
+                                className={`px-3 h-8 rounded-lg transition ${filter === "week" ? "bg-black text-white" : "text-slate-700 hover:bg-slate-100"}`}
+                            >
+                                This week
+                            </button>
+                            <button
+                                onClick={() => setFilter("month")}
+                                className={`px-3 h-8 rounded-lg transition ${filter === "month" ? "bg-black text-white" : "text-slate-700 hover:bg-slate-100"}`}
+                            >
+                                This month
+                            </button>
+                        </div>
                     </div>
+
 
                     {/* ---- Totals + Entries list (filtered) ---- */}
                     {filteredEntries.length > 0 ? (
@@ -224,5 +233,6 @@ export default function App() {
                 </div>
             )}
         </div>
+        </AppShell>
     );
 }
