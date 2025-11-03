@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* --- base look & feel --- */
 @layer base {
     html, body, #root { height: 100%; }
     body { @apply bg-slate-50 text-slate-900 antialiased font-sans; }
@@ -10,7 +9,6 @@
     ::selection { @apply bg-black text-white; }
 }
 
-/* --- tiny design system primitives --- */
 @layer components {
     .container-page { @apply max-w-5xl mx-auto px-4; }
     .section-title { @apply text-xl font-semibold tracking-tight; }
@@ -19,17 +17,20 @@
     .dark .card { @apply border-slate-800 bg-slate-900/50; }
 
     .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition; }
-    .btn-primary { @apply btn bg-black text-white hover:bg-slate-900; }
-    .dark .btn-primary { @apply bg-slate-100 text-slate-900 hover:bg-white; }
+    .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700 shadow-brand; }
+    .dark .btn-primary { @apply bg-brand-500 hover:bg-brand-400 text-slate-900; }
     .btn-ghost { @apply btn border border-slate-300 bg-white hover:bg-slate-50; }
     .dark .btn-ghost { @apply border-slate-700 bg-slate-900 hover:bg-slate-800; }
 
-    .input { @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200; }
-    .dark .input { @apply border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus:border-slate-600 focus:ring-slate-800; }
+    .input { @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200; }
+    .dark .input { @apply border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus:border-brand-400 focus:ring-brand-900; }
 
     .badge { @apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium; }
     .badge-green { @apply badge border-emerald-200 bg-emerald-50 text-emerald-700; }
     .badge-amber { @apply badge border-amber-200 bg-amber-50 text-amber-700; }
     .dark .badge-green { @apply border-emerald-900 bg-emerald-950 text-emerald-300; }
     .dark .badge-amber { @apply border-amber-900 bg-amber-950 text-amber-300; }
+
+    /* tiny header pill */
+    .brand-pill { @apply inline-flex h-8 w-8 items-center justify-center rounded-xl text-white font-semibold bg-gradient-to-br from-brand-500 to-brand-700; }
 }
