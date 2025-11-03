@@ -5,6 +5,8 @@ import EntryCreate from "./EntryCreate";
 import { adaptProject, adaptEntry } from "./adapters";
 import { isInThisWeek, isInThisMonth } from "./utils/dateFilters";
 import AppShell from "./components/AppShell";
+import Toast from "./components/Toast";
+
 
 
 // NOTE: no App.css import — Tailwind is handling styles via index.css
@@ -16,6 +18,8 @@ export default function App() {
     const [entries, setEntries] = useState([]);
     const [filter, setFilter] = useState("all");
     const [clients, setClients] = useState([]);
+    const [toast, setToast] = useState(null);
+
 
     useEffect(() => {
         (async () => {
@@ -182,6 +186,7 @@ export default function App() {
                                 const created = await EntriesAPI.create(payload);
                                 const item = adaptEntry(created);
                                 setEntries((prev) => [item, ...(prev || [])]);
+                                setToast({ message: "Entry added successfully ✨", type: "success" });
                             }}
                         />
 
@@ -265,6 +270,14 @@ export default function App() {
                     </div>
                 )}
             </div>
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
+            )}
+
         </AppShell>
 
     );
