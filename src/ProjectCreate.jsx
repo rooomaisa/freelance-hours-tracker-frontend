@@ -25,7 +25,8 @@ export default function ProjectCreate({ onCreate, clients = [], onClientsChange 
                 }
             })();
         }
-    }, []); // eslint-disable-line
+        // eslint-disable-next-line
+    }, []);
 
     const canSubmit =
         name.trim().length > 0 &&
@@ -72,35 +73,19 @@ export default function ProjectCreate({ onCreate, clients = [], onClientsChange 
     return (
         <form
             onSubmit={handleSubmit}
-            style={{ display: "flex", gap: 8, margin: "12px 0", flexWrap: "wrap" }}
+            className="my-3 flex flex-wrap items-start gap-2"
         >
             <input
                 placeholder="Project name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                style={{
-                    flex: "1 1 200px",
-                    padding: 10,
-                    borderRadius: 8,
-                    border: "1px solid #ddd",
-                    background: "#fff",
-                    color: "#111",
-                }}
+                className="min-w-[200px] flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
             />
 
             <select
                 value={clientId}
                 onChange={(e) => setClientId(e.target.value)}
-                style={{
-                    minWidth: 200,
-                    padding: "10px 12px",
-                    borderRadius: 8,
-                    border: "1px solid #ddd",
-                    backgroundColor: "#fff",
-                    color: "#111",
-                    appearance: "auto",
-                    cursor: "pointer",
-                }}
+                className="min-w-[200px] rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
             >
                 <option value="">No client</option>
                 {clients?.map((c) => (
@@ -114,48 +99,28 @@ export default function ProjectCreate({ onCreate, clients = [], onClientsChange 
             <button
                 type="submit"
                 disabled={!canSubmit}
-                style={{
-                    minWidth: 110,
-                    padding: "10px 12px",
-                    borderRadius: 8,
-                    border: "1px solid #000",
-                    background: "#000",
-                    color: "#fff",
-                    fontWeight: 600,
-                    cursor: canSubmit ? "pointer" : "not-allowed",
-                }}
+                className={`min-w-[110px] rounded-xl border px-4 py-2 font-semibold transition
+          ${canSubmit
+                    ? "border-black bg-black text-white hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300"
+                    : "cursor-not-allowed border-slate-300 bg-slate-100 text-slate-400"}`}
             >
                 {loading ? "Saving…" : "Add"}
             </button>
 
             {/* inline new-client fields */}
             {clientId === NEW && (
-                <div style={{ display: "flex", gap: 8, width: "100%", marginTop: 8 }}>
+                <div className="mt-2 grid w-full grid-cols-1 gap-2 sm:grid-cols-[220px_1fr]">
                     <input
                         placeholder="New client name"
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
-                        style={{
-                            flex: "0 0 220px",
-                            padding: 10,
-                            borderRadius: 8,
-                            border: "1px solid #ddd",
-                            background: "#fff",
-                            color: "#111",
-                        }}
+                        className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
                     />
                     <input
                         placeholder="New client email (optional)"
                         value={newEmail}
                         onChange={(e) => setNewEmail(e.target.value)}
-                        style={{
-                            flex: "1 1 240px",
-                            padding: 10,
-                            borderRadius: 8,
-                            border: "1px solid #ddd",
-                            background: "#fff",
-                            color: "#111",
-                        }}
+                        className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
                     />
                 </div>
             )}

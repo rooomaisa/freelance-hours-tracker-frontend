@@ -1,25 +1,24 @@
 import { useEffect, useState } from "react";
-import { ProjectsAPI } from "./api";
+import { ProjectsAPI, EntriesAPI, ClientsAPI } from "./api";
 import ProjectCreate from "./ProjectCreate";
-import { adaptProject } from "./adapters";
-import "./App.css";
-import { adaptEntry } from "./adapters";
-import { EntriesAPI } from "./api";
 import EntryCreate from "./EntryCreate";
+import { adaptProject, adaptEntry } from "./adapters";
 import { isInThisWeek, isInThisMonth } from "./utils/dateFilters";
-import { ClientsAPI } from "./api";
+import AppShell from "./components/AppShell";
+import Toast from "./components/Toast";
 
 
 
+// NOTE: no App.css import — Tailwind is handling styles via index.css
 
-
-function App() {
+export default function App() {
     const [projects, setProjects] = useState(null);
     const [error, setError] = useState("");
     const [selected, setSelected] = useState(null);
     const [entries, setEntries] = useState([]);
     const [filter, setFilter] = useState("all");
-
+    const [clients, setClients] = useState([]);
+    const [toast, setToast] = useState(null);
 
 
     useEffect(() => {
@@ -27,16 +26,13 @@ function App() {
             try {
                 const data = await ProjectsAPI.list();
                 const items = Array.isArray(data) ? data : (data?.content ?? []);
-                console.log("RAW projects:", items);
                 const adapted = items.map(adaptProject);
-                console.log("ADAPTED projects:", adapted);
                 setProjects(adapted);
             } catch (e) {
                 setError(e.message);
             }
         })();
     }, []);
-    const [clients, setClients] = useState([]);
 
     useEffect(() => {
         (async () => {
@@ -50,22 +46,21 @@ function App() {
         })();
     }, []);
 
-
     async function handleCreate(payload) {
         try {
             const created = await ProjectsAPI.create(payload);
             const item = adaptProject(created);
 
-            // keep your existing name fallback
+            // keep existing name fallback
             if (!item.name || item.name.startsWith("(untitled")) {
                 if (payload?.name && payload.name.trim().length > 0) {
                     item.name = payload.name.trim();
                 }
             }
 
-            // 👇 NEW: if backend didn't echo clientName, infer it from the dropdown
+            // if backend didn’t echo clientName, infer it from the dropdown
             if (!item.clientName && payload?.clientId) {
-                const select = document.querySelector("select"); // our client select
+                const select = document.querySelector("select");
                 const opt = Array.from(select?.options || []).find(
                     (o) => Number(o.value) === Number(payload.clientId)
                 );
@@ -91,15 +86,14 @@ function App() {
     async function handleDeleteEntry(entryId) {
         try {
             await EntriesAPI.delete(entryId);
-            setEntries(prev => prev.filter(e => e.id !== entryId));
+            setEntries((prev) => prev.filter((e) => e.id !== entryId));
         } catch (e) {
             console.error(e);
             setError(String(e.message || e));
         }
     }
 
-
-    const filteredEntries = (entries || []).filter(en => {
+    const filteredEntries = (entries || []).filter((en) => {
         if (filter === "all") return true;
         if (filter === "week") return isInThisWeek(en.date);
         if (filter === "month") return isInThisMonth(en.date);
@@ -108,170 +102,183 @@ function App() {
 
     const filteredTotal = filteredEntries.reduce((sum, e) => sum + (e.hours || 0), 0);
 
-
-
     return (
-        <div className="container">
-            <h1 className="title">HourTracker (Frontend)</h1>
-            <p className="muted small">
-                Fetching from: <code>{import.meta.env.VITE_API_URL}</code>
-            </p>
-
-            <ProjectCreate
-                onCreate={handleCreate}
-                clients={clients}
-                onClientsChange={setClients}/>
-
-            {error && <p style={{ color: "crimson" }}>Error: {error}</p>}
-            {!projects && !error && <p>Loading projects…</p>}
-
-            {Array.isArray(projects) && projects.length === 0 && (
-                <p className="muted">No projects yet.</p>
-            )}
-
-            {Array.isArray(projects) && projects.length > 0 && (
-                <ul className="list">
-                    {projects.map((p) => (
-                        <li
-                            key={p.id}
-                            className="card"
-                            onClick={() => handleSelect(p)}
-                            style={{ cursor: "pointer" }}
-                        >
-                            {/* TITLE = project name */}
-                            <div className="card-title">{p.name}</div>
-
-                            {/* META = client + active */}
-                            <div className="muted small">
-                                Client: {p.clientName ?? "—"} · Active: {String(p.active)}
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            )}
-
-            {selected && (
-                <div className="card" style={{ marginTop: 12 }}>
-                    <div className="card-title">Selected project</div>
-                    <div className="muted small">
-                        #{selected.id} — {selected.name}
-                    </div>
-
-                    {/* ---- Add Entry form (date/hours/notes/billable) ---- */}
-                    <EntryCreate
-                        projectId={selected.id}
-                        onCreate={async (payload) => {
-                            const created = await EntriesAPI.create(payload);
-                            const item = adaptEntry(created);
-                            setEntries((prev) => [item, ...(prev || [])]);
-                        }}
-                    />
-
-                    {/* ---- Filter controls ---- */}
-                    <div
-                        className="muted small"
-                        style={{ marginTop: 12, display: "flex", gap: 8, alignItems: "center" }}
-                    >
-                        <span>Show:</span>
-                        <button
-                            onClick={() => setFilter("all")}
-                            style={{
-                                padding: "6px 10px",
-                                borderRadius: 8,
-                                border: filter === "all" ? "1px solid #000" : "1px solid #ddd",
-                                background: filter === "all" ? "#000" : "#fff",
-                                color: filter === "all" ? "#fff" : "#000",
-                                cursor: "pointer",
-                            }}
-                        >
-                            All
-                        </button>
-                        <button
-                            onClick={() => setFilter("week")}
-                            style={{
-                                padding: "6px 10px",
-                                borderRadius: 8,
-                                border: filter === "week" ? "1px solid #000" : "1px solid #ddd",
-                                background: filter === "week" ? "#000" : "#fff",
-                                color: filter === "week" ? "#fff" : "#000",
-                                cursor: "pointer",
-                            }}
-                        >
-                            This week
-                        </button>
-                        <button
-                            onClick={() => setFilter("month")}
-                            style={{
-                                padding: "6px 10px",
-                                borderRadius: 8,
-                                border: filter === "month" ? "1px solid #000" : "1px solid #ddd",
-                                background: filter === "month" ? "#000" : "#fff",
-                                color: filter === "month" ? "#fff" : "#000",
-                                cursor: "pointer",
-                            }}
-                        >
-                            This month
-                        </button>
-                    </div>
-
-                    {/* ---- Totals + Entries list (filtered) ---- */}
-                    {filteredEntries.length > 0 ? (
-                        <>
-                            <div className="muted small" style={{ marginTop: 8 }}>
-                                Total: {filteredTotal.toFixed(2)} h
-                                {filter !== "all" && <span> (filtered)</span>}
-                            </div>
-
-                            <ul className="list" style={{ marginTop: 8 }}>
-                                {filteredEntries.map((en) => (
-                                    <li
-                                        key={en.id}
-                                        className="card"
-                                        style={{
-                                            display: "grid",
-                                            gridTemplateColumns: "120px 80px 1fr 90px 36px",
-                                            gap: 8,
-                                            alignItems: "center",
-                                        }}
-                                    >
-                                        <div className="muted small">{en.date || "—"}</div>
-                                        <div className="card-title" style={{ margin: 0 }}>
-                                            {typeof en.hours === "number" ? en.hours.toFixed(2) : en.hours}h
-                                        </div>
-                                        <div className="muted">{en.notes || "(no notes)"}</div>
-                                        <div className="muted small">
-                                            {en.billable ? "Billable" : "Non-billable"}
-                                        </div>
-
-                                        <button
-                                            onClick={() => handleDeleteEntry(en.id)}
-                                            title="Delete entry"
-                                            style={{
-                                                border: "1px solid #ddd",
-                                                borderRadius: 8,
-                                                background: "#fff",
-                                                cursor: "pointer",
-                                                padding: 6,
-                                                lineHeight: 1,
-                                            }}
-                                        >
-                                            🗑️
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
-                    ) : (
-                        <div className="muted small" style={{ marginTop: 8 }}>
-                            {filter === "all" ? "No entries yet." : "No entries in this range."}
-                        </div>
-                    )}
+        <AppShell>
+            <div className="container-page py-6">
+                {/* Mini gradient header */}
+                <div className="rounded-2xl p-4 bg-gradient-to-r from-brand-50 to-transparent dark:from-brand-900/20">
+                    <h1 className="section-title">HoursTracker (Frontend)</h1>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                        Fetching from: <code className="font-mono">{import.meta.env.VITE_API_URL}</code>
+                    </p>
                 </div>
+
+                <ProjectCreate
+                    onCreate={handleCreate}
+                    clients={clients}
+                    onClientsChange={setClients}
+                />
+
+                {/* status messages */}
+                {error && <p className="mt-3 text-sm text-red-600">Error: {error}</p>}
+                {!projects && !error && <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">Loading projects…</p>}
+                {Array.isArray(projects) && projects.length === 0 && (
+                    <div className="card mt-4 p-8 text-center">
+                        <div className="text-4xl mb-2">📝</div>
+                        <div className="font-medium">No projects yet</div>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                            Create your first project using the form above.
+                        </p>
+                    </div>
+                )}
+
+                {/* projects list */}
+                {Array.isArray(projects) && projects.length > 0 && (
+                    <ul className="mt-4 grid gap-3">
+                        {projects.map((p) => (
+                            <li
+                                key={p.id}
+                                onClick={() => handleSelect(p)}
+                                className="card p-4 hover:shadow-md hover:-translate-y-0.5 hover:ring-1 hover:ring-brand-200 dark:hover:ring-brand-800 transition cursor-pointer"
+                            >
+                                <div className="flex items-start gap-3">
+                                    {/* avatar-ish square */}
+                                    <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 font-semibold">
+                                        {String(p.name || "?").slice(0, 1).toUpperCase()}
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="text-base font-medium">{p.name}</div>
+                                            {/* brandy Active badge */}
+                                            <span
+                                                className={
+                                                    p.active
+                                                        ? "badge border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-900 dark:bg-brand-950 dark:text-brand-300"
+                                                        : "badge-amber"
+                                                }
+                                            >
+                    {p.active ? "Active" : "Paused"}
+                  </span>
+                                        </div>
+                                        <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                                            Client: {p.clientName ?? "—"}
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+
+                {/* selected project */}
+                {selected && (
+                    <div className="card mt-4 p-4">
+                        <div className="text-base font-semibold">Selected project</div>
+                        <div className="text-sm text-slate-600 dark:text-slate-400">
+                            #{selected.id} — {selected.name}
+                        </div>
+
+                        {/* ---- Add Entry form ---- */}
+                        <EntryCreate
+                            projectId={selected.id}
+                            onCreate={async (payload) => {
+                                const created = await EntriesAPI.create(payload);
+                                const item = adaptEntry(created);
+                                setEntries((prev) => [item, ...(prev || [])]);
+                                setToast({ message: "Entry added successfully ✨", type: "success" });
+                            }}
+                        />
+
+                        {/* ---- Filter controls (brand segmented) ---- */}
+                        <div className="mt-3 text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <span className="text-slate-600 dark:text-slate-400">Show:</span>
+                            <div className="inline-flex rounded-xl border border-slate-300 bg-white p-1 dark:bg-slate-900 dark:border-slate-700">
+                                <button
+                                    onClick={() => setFilter("all")}
+                                    className={`px-3 h-8 rounded-lg transition ${
+                                        filter === "all"
+                                            ? "bg-brand-600 text-white dark:bg-brand-500 dark:text-slate-900"
+                                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    }`}
+                                >
+                                    All
+                                </button>
+                                <button
+                                    onClick={() => setFilter("week")}
+                                    className={`px-3 h-8 rounded-lg transition ${
+                                        filter === "week"
+                                            ? "bg-brand-600 text-white dark:bg-brand-500 dark:text-slate-900"
+                                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    }`}
+                                >
+                                    This week
+                                </button>
+                                <button
+                                    onClick={() => setFilter("month")}
+                                    className={`px-3 h-8 rounded-lg transition ${
+                                        filter === "month"
+                                            ? "bg-brand-600 text-white dark:bg-brand-500 dark:text-slate-900"
+                                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                    }`}
+                                >
+                                    This month
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* ---- Totals + Entries list (filtered) ---- */}
+                        {filteredEntries.length > 0 ? (
+                            <>
+                                <div className="mt-2 text-sm text-slate-700 dark:text-slate-300">
+                                    Total: {filteredTotal.toFixed(2)} h
+                                    {filter !== "all" && <span> (filtered)</span>}
+                                </div>
+
+                                <ul className="mt-2 grid gap-2">
+                                    {filteredEntries.map((en) => (
+                                        <li
+                                            key={en.id}
+                                            className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 grid grid-cols-[120px_80px_1fr_100px_40px] items-center gap-2"
+                                        >
+                                            <div className="text-sm text-slate-600 dark:text-slate-400">{en.date || "—"}</div>
+                                            <div className="text-base font-semibold m-0">
+                                                {typeof en.hours === "number" ? en.hours.toFixed(2) : en.hours}h
+                                            </div>
+                                            <div className="text-sm text-slate-700 dark:text-slate-200">
+                                                {en.notes || "(no notes)"}
+                                            </div>
+                                            <div className="text-xs text-slate-600 dark:text-slate-400">
+                                                {en.billable ? "Billable" : "Non-billable"}
+                                            </div>
+                                            <button
+                                                onClick={() => handleDeleteEntry(en.id)}
+                                                title="Delete entry"
+                                                className="btn-ghost h-8 px-2"
+                                            >
+                                                🗑️
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        ) : (
+                            <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                                {filter === "all" ? "No entries yet." : "No entries in this range."}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+            {toast && (
+                <Toast
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={() => setToast(null)}
+                />
             )}
-        </div>
+
+        </AppShell>
+
     );
-
-
 }
-
-export default App;
