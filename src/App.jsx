@@ -7,6 +7,9 @@ import { isInThisWeek, isInThisMonth } from "./utils/dateFilters";
 import AppShell from "./components/AppShell";
 import Toast from "./components/Toast";
 import SummaryBar from "./components/SummaryBar";
+import { useAuth } from "./auth/AuthContext";
+import LoginPage from "./auth/LoginPage";
+
 
 
 
@@ -20,6 +23,8 @@ export default function App() {
     const [filter, setFilter] = useState("all");
     const [clients, setClients] = useState([]);
     const [toast, setToast] = useState(null);
+
+
 
 
     useEffect(() => {
@@ -48,6 +53,13 @@ export default function App() {
             }
         })();
     }, []);
+
+
+    const { isLoggedIn } = useAuth();
+
+    if (!isLoggedIn) {
+        return <LoginPage />;
+    }
 
 
     async function handleCreate(payload) {
