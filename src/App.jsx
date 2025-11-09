@@ -6,6 +6,7 @@ import { adaptProject, adaptEntry } from "./adapters";
 import { isInThisWeek, isInThisMonth } from "./utils/dateFilters";
 import AppShell from "./components/AppShell";
 import Toast from "./components/Toast";
+import SummaryBar from "./components/SummaryBar";
 
 
 
@@ -112,6 +113,14 @@ export default function App() {
                         Fetching from: <code className="font-mono">{import.meta.env.VITE_API_URL}</code>
                     </p>
                 </div>
+
+                <SummaryBar
+                    projects={projects || []}
+                    clients={clients || []}
+                    selected={selected}
+                    entries={entries || []}
+                />
+
 
                 <ProjectCreate
                     onCreate={handleCreate}
