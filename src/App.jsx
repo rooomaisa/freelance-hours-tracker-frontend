@@ -6,6 +6,7 @@ import { adaptProject, adaptEntry } from "./adapters";
 import { isInThisWeek, isInThisMonth } from "./utils/dateFilters";
 import AppShell from "./components/AppShell";
 import Toast from "./components/Toast";
+import SummaryBar from "./components/SummaryBar";
 
 
 
@@ -26,13 +27,14 @@ export default function App() {
             try {
                 const data = await ProjectsAPI.list();
                 const items = Array.isArray(data) ? data : (data?.content ?? []);
-                const adapted = items.map(adaptProject);
-                setProjects(adapted);
+                setProjects(items.map(adaptProject));
             } catch (e) {
                 setError(e.message);
+                showToast("Could not load projects", "error");
             }
         })();
     }, []);
+
 
     useEffect(() => {
         (async () => {
@@ -42,23 +44,22 @@ export default function App() {
             } catch (e) {
                 console.error(e);
                 setClients([]);
+                showToast("Could not load clients", "error");
             }
         })();
     }, []);
+
 
     async function handleCreate(payload) {
         try {
             const created = await ProjectsAPI.create(payload);
             const item = adaptProject(created);
 
-            // keep existing name fallback
             if (!item.name || item.name.startsWith("(untitled")) {
                 if (payload?.name && payload.name.trim().length > 0) {
                     item.name = payload.name.trim();
                 }
             }
-
-            // if backend didn’t echo clientName, infer it from the dropdown
             if (!item.clientName && payload?.clientId) {
                 const select = document.querySelector("select");
                 const opt = Array.from(select?.options || []).find(
@@ -68,10 +69,13 @@ export default function App() {
             }
 
             setProjects((prev) => (prev ? [item, ...prev] : [item]));
+            showToast(`Project “${item.name || "New project"}” created ✅`, "success");
         } catch (e) {
             setError(e.message);
+            showToast("Failed to create project", "error");
         }
     }
+
 
     async function handleSelect(project) {
         setSelected(project);
@@ -86,11 +90,17 @@ export default function App() {
     async function handleDeleteEntry(entryId) {
         try {
             await EntriesAPI.delete(entryId);
-            setEntries((prev) => prev.filter((e) => e.id !== entryId));
+            setEntries(prev => prev.filter(e => e.id !== entryId));
+            showToast("Entry deleted 🗑️", "success");
         } catch (e) {
             console.error(e);
             setError(String(e.message || e));
+            showToast("Failed to delete entry", "error");
         }
+    }
+
+    function showToast(message, type = "success") {
+        setToast({ message, type });
     }
 
     const filteredEntries = (entries || []).filter((en) => {
@@ -112,6 +122,14 @@ export default function App() {
                         Fetching from: <code className="font-mono">{import.meta.env.VITE_API_URL}</code>
                     </p>
                 </div>
+
+                <SummaryBar
+                    projects={projects || []}
+                    clients={clients || []}
+                    selected={selected}
+                    entries={entries || []}
+                />
+
 
                 <ProjectCreate
                     onCreate={handleCreate}
@@ -183,12 +201,18 @@ export default function App() {
                         <EntryCreate
                             projectId={selected.id}
                             onCreate={async (payload) => {
-                                const created = await EntriesAPI.create(payload);
-                                const item = adaptEntry(created);
-                                setEntries((prev) => [item, ...(prev || [])]);
-                                setToast({ message: "Entry added successfully ✨", type: "success" });
+                                try {
+                                    const created = await EntriesAPI.create(payload);
+                                    const item = adaptEntry(created);
+                                    setEntries((prev) => [item, ...(prev || [])]);
+                                    showToast("Entry added ✨", "success");
+                                } catch (e) {
+                                    console.error(e);
+                                    showToast("Failed to add entry", "error");
+                                }
                             }}
                         />
+
 
                         {/* ---- Filter controls (brand segmented) ---- */}
                         <div className="mt-3 text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
