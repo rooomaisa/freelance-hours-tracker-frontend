@@ -11,7 +11,6 @@ async function request(path, options = {}) {
         throw new Error(`HTTP ${res.status}: ${text}`);
     }
 
-    // If there's no body, return undefined safely
     if (res.status === 204) return undefined;
 
     const ct = res.headers.get("content-type") || "";
@@ -19,7 +18,6 @@ async function request(path, options = {}) {
         return res.json();
     }
 
-    // Fallbacks (some servers return 201 with empty or text body)
     const text = await res.text();
     try { return JSON.parse(text); } catch { return text || undefined; }
     }
@@ -33,9 +31,6 @@ async function request(path, options = {}) {
         }),
         };
 
-    // export const ClientsAPI = {
-    // list: () => request("/api/clients"),
-    // };
 
     export const EntriesAPI = {
     // list entries for a project

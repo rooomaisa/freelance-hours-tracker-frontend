@@ -5,14 +5,14 @@ const NEW = "__new__";
 
 export default function ProjectCreate({ onCreate, clients = [], onClientsChange }) {
     const [name, setName] = useState("");
-    const [clientId, setClientId] = useState(""); // "", existing id, or "__new__"
+    const [clientId, setClientId] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // new-client fields (only shown when clientId === NEW)
+
     const [newName, setNewName] = useState("");
     const [newEmail, setNewEmail] = useState("");
 
-    // (Optional) if parent didn't provide clients yet, fetch them here as a fallback
+
     useEffect(() => {
         if (!clients || clients.length === 0) {
             (async () => {
@@ -31,7 +31,7 @@ export default function ProjectCreate({ onCreate, clients = [], onClientsChange 
     const canSubmit =
         name.trim().length > 0 &&
         !loading &&
-        (clientId !== NEW || newName.trim().length > 0); // require new client name if NEW
+        (clientId !== NEW || newName.trim().length > 0);
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -41,26 +41,26 @@ export default function ProjectCreate({ onCreate, clients = [], onClientsChange 
             setLoading(true);
             let chosenClientId = clientId ? (clientId === NEW ? null : Number(clientId)) : null;
 
-            // If user picked "New client…", create it first
+
             if (clientId === NEW) {
                 const createdClient = await ClientsAPI.create({
                     name: newName.trim(),
                     email: newEmail.trim() || null,
                 });
-                // add to global list and select it
+
                 const updated = [...(clients || []), createdClient];
                 onClientsChange?.(updated);
                 chosenClientId = createdClient.id;
             }
 
-            // Create the project with the final clientId (may be null)
+
             await onCreate({
                 name: name.trim(),
                 active: true,
                 clientId: chosenClientId,
             });
 
-            // reset form
+
             setName("");
             setClientId("");
             setNewName("");
