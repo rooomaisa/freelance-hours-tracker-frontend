@@ -77,7 +77,7 @@ Light mode preview
 ![Dashboard Light](./public/localhost_5174_.png)
 
 Dark mode preview  
-![Dashboard Dark](./public/localhost_5174_dark.png)
+![Dashboard Dark](./public/localhost_5174dark.png)
 
 
 

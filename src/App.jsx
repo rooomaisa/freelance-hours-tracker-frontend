@@ -129,9 +129,9 @@ export default function App() {
             <div className="container-page py-6">
                 {/* Mini gradient header */}
                 <div className="rounded-2xl p-4 bg-gradient-to-r from-brand-50 to-transparent dark:from-brand-900/20">
-                    <h1 className="section-title">HoursTracker (Frontend)</h1>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                        Fetching from: <code className="font-mono">{import.meta.env.VITE_API_URL}</code>
+                    <h1 className="section-title">HoursTracker </h1>
+                    <p className="text-xs text-slate-500 mt-1 italic">
+                        Connected to <span className="font-mono text-slate-700">{import.meta.env.VITE_API_URL}</span>
                     </p>
                 </div>
 
